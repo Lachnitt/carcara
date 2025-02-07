@@ -450,6 +450,7 @@ impl<'c> ProofChecker<'c> {
             "sko_ex" => subproof::sko_ex,
             "sko_forall" => subproof::sko_forall,
             "reordering" => extras::reordering,
+            "shuffle" => extras::shuffle,
             "symm" => extras::symm,
             "not_symm" => extras::not_symm,
             "eq_symmetric" => extras::eq_symmetric,
