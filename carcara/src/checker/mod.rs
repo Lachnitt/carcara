@@ -496,6 +496,8 @@ impl<'c> ProofChecker<'c> {
             // resolution rule will be called. Until that is decided and added to the specification,
             // we define a new specialized rule that calls it
             "strict_resolution" => resolution::strict_resolution,
+            
+	    "rare_rewrite" => rare::rare_rewrite,
 
             _ => return None,
         })

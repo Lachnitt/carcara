@@ -154,6 +154,7 @@ macro_rules! match_term {
     (@GET_VARIANT not)      => { $crate::ast::Operator::Not };
     (@GET_VARIANT =>)       => { $crate::ast::Operator::Implies };
     (@GET_VARIANT and)      => { $crate::ast::Operator::And };
+    (@GET_VARIANT RareList) => { $crate::ast::Operator::RareList };
     (@GET_VARIANT or)       => { $crate::ast::Operator::Or };
     (@GET_VARIANT xor)      => { $crate::ast::Operator::Xor };
     (@GET_VARIANT =)        => { $crate::ast::Operator::Equals };

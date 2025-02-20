@@ -149,6 +149,9 @@ pub enum CheckerError {
 
     #[error("division or modulo by zero")]
     DivOrModByZero,
+    
+    #[error("could not find rare rewrite of name {0}")]
+    RARENotFound(&'static str),
 
     // Equality errors
     #[error(transparent)]

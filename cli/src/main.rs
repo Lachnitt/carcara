@@ -164,7 +164,7 @@ struct CheckingOptions {
     #[clap(long, conflicts_with("ignore-unknown-rules"), hide = true)]
     skip_unknown_rules: bool,
 
-    /// A set of extra rules to be allowed by the checker, and considered as holes.
+    /// A set of extra rules to be allowed by the checker, these are not checked!
     #[clap(long, multiple = true, conflicts_with = "ignore-unknown-rules")]
     allowed_rules: Option<Vec<String>>,
 

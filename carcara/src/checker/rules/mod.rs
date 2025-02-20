@@ -225,6 +225,7 @@ pub(super) mod congruence;
 pub(super) mod extras;
 pub(super) mod linear_arithmetic;
 pub(super) mod quantifier;
+pub(super) mod rare;
 pub(super) mod reflexivity;
 pub(super) mod resolution;
 pub(super) mod simplification;
