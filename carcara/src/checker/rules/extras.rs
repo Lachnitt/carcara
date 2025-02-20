@@ -24,6 +24,33 @@ pub fn reordering(RuleArgs { conclusion, premises, .. }: RuleArgs) -> RuleResult
     }
 }
 
+pub fn shuffle(RuleArgs { conclusion, premises, .. }: RuleArgs) -> RuleResult {
+    assert_num_premises(premises, 0)?;
+    assert_clause_len(conclusion, 1)?;
+
+    let (phi_1, phi_2) = match_term_err!((= phi_1 phi_2) = &conclusion[0])?;
+    let (phi_1_op, phi_1_args) = match phi_1.as_ref() {
+        Term::Op(phi_1_op, phi_1_args) => (phi_1_op, phi_1_args),
+    	_ => return Err(CheckerError::NotValidNaryTerm(phi_1.clone()))
+    };
+    let (phi_2_op, phi_2_args) = match phi_2.as_ref() {
+        Term::Op(phi_2_op, phi_2_args) => (phi_2_op, phi_2_args),
+    	_ => return Err(CheckerError::NotValidNaryTerm(phi_1.clone()))
+    };
+    if phi_1_op != phi_2_op { return Err(CheckerError::NotValidNaryTerm(phi_1.clone()))} //TODO: Figure out what error is best
+
+    let phi_1_set: IndexSet<_> = phi_1_args.iter().collect();
+    let phi_2_set: IndexSet<_> = phi_2_args.iter().collect();
+
+    if let Some(&t) = phi_1_set.difference(&phi_2_set).next() {
+        Err(CheckerError::ContractionMissingTerm(t.clone()))
+    } else if let Some(&t) = phi_2_set.difference(&phi_1_set).next() {
+        Err(CheckerError::ContractionExtraTerm(t.clone()))
+    } else {
+        Ok(())
+    }
+}
+
 pub fn symm(RuleArgs { conclusion, premises, .. }: RuleArgs) -> RuleResult {
     assert_num_premises(premises, 1)?;
     assert_clause_len(conclusion, 1)?;
@@ -226,6 +253,33 @@ mod tests {
 
                 "(step t1 (cl) :rule hole)
                 (step t2 (cl) :rule reordering :premises (t1))": true,
+            }
+        }
+    }
+
+    #[test]
+    fn shuffle() {
+        test_cases! {
+            definitions = "
+                (declare-fun p () Bool)
+                (declare-fun q () Bool)
+                (declare-fun r () Bool)
+                (declare-fun s () Bool)
+                (declare-fun i () Int)
+                (declare-fun j () Int)
+                (declare-fun k () Int)
+                (declare-fun l () Int)
+            ",
+            "sfdSimple working examples" {
+                "(step t2 (cl (= (or p q r s) (or r q p s))) :rule shuffle)": true,
+	     }
+            "Simple working examples 22" {
+                "(step t2 (cl (= (and p q q p r s) (and r q p p s q))) :rule shuffle)": true,
+
+                "(step t2 (cl (= (+ (+ i j) k l) (+ l k (+ i j)))) :rule shuffle)": true,
+
+                "(step t2 (cl (= (* i j k (* l l)) (* (* l l) i k j))) :rule shuffle)": true,
+
             }
         }
     }
