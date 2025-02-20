@@ -1447,7 +1447,7 @@ pub fn get_rule(rule_name: &str) ->Rule {
       "eq-symm" => eq_symm,
       "distinct-binary-elim" => distinct_binary_elim,
 
-      _ => rare_error,
+      x => {print!("{}",x); rare_error},
     }
 }
 
