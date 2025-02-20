@@ -1,6 +1,6 @@
 use super::{
-    assert_clause_len, assert_eq, assert_num_args, assert_num_premises,
-    get_premise_term, CheckerError, RuleArgs, RuleResult,
+    assert_clause_len, assert_eq, assert_num_args,
+    CheckerError, RuleArgs, RuleResult,
 };
 use crate::{checker::rules::*};
 
@@ -263,7 +263,7 @@ pub fn bool_impl_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     let (t_match,s_match) = match_term_err!((=> t_match s_match) = rmatch)?;
 
     //check target
-    let (t_target,s_target) = match_term_err!((or (not t_target) s_target) = rmatch)?;
+    let (t_target,s_target) = match_term_err!((or (not t_target) s_target) = rtarget)?;
 
     //check equality match = target
     assert_eq(t_match,t_target)?;
@@ -312,7 +312,8 @@ pub fn bool_or_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 }
 
 //(define-rule* bool-or-false ((xs Bool :list) (ys Bool :list)) (or xs false ys) (or xs ys))
-pub fn bool_or_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+/*pub fn bool_or_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
 
     //check conclusion, split up in match and target
     assert_clause_len(conclusion, 1)?;
@@ -398,7 +399,7 @@ pub fn bool_or_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResul
 
     Ok(())
 }
-
+*/
 
 
 //(define-rule bool-and-false ((xs Bool :list) (ys Bool :list)) (and xs false ys) false)
@@ -802,7 +803,7 @@ pub fn ite_then_lookahead_self(RuleArgs { conclusion, args, .. }: RuleArgs) -> R
     
     //check match
     let (c_match,c2_match,x_match) = match_term_err!((ite c_match c_match x_match) = rmatch)?;
-    assert_eq(c_match,c2_match);
+    assert_eq(c_match,c2_match)?;
 
     //check target
     let (c_target,top,x_target) = match_term_err!((ite c_target top x_target) = rtarget)?;
@@ -833,7 +834,7 @@ pub fn ite_else_lookahead_self(RuleArgs { conclusion, args, .. }: RuleArgs) -> R
     
     //check match
     let (c_match,x_match,c2_match) = match_term_err!((ite c_match x_match c2_match) = rmatch)?;
-    assert_eq(c_match,c2_match);
+    assert_eq(c_match,c2_match)?;
 
     //check target
     let (c_target,x_target,bot) = match_term_err!((ite c_target x_target bot) = rtarget)?;
@@ -865,7 +866,7 @@ pub fn ite_then_lookahead_not_self(RuleArgs { conclusion, args, .. }: RuleArgs) 
     
     //check match
     let (c_match,c2_match,x_match) = match_term_err!((ite c_match (not c2_match) x_match) = rmatch)?;
-    assert_eq(c_match,c2_match);
+    assert_eq(c_match,c2_match)?;
 
     //check target
     let (c_target,bot,x_target) = match_term_err!((ite c_target bot x_target) = rtarget)?;
@@ -896,7 +897,7 @@ pub fn ite_else_lookahead_not_self(RuleArgs { conclusion, args, .. }: RuleArgs) 
     
     //check match
     let (c_match,c2_match,x_match) = match_term_err!((ite c_match x_match (not c2_match)) = rmatch)?;
-    assert_eq(c_match,c2_match);
+    assert_eq(c_match,c2_match)?;
 
     //check target
     let (c_target,x_target,top) = match_term_err!((ite c_target x_target top) = rtarget)?;
@@ -933,7 +934,7 @@ pub fn ite_expand(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     let (temp1,temp2) = match_term_err!((and temp1 temp2) = rtarget)?;
     let (c_target,x_target) = match_term_err!((or (not c_target) x_target) = temp1)?;
     let (c2_target,y_target) = match_term_err!((or c2_target y_target) = temp2)?;
-    assert_eq(c_target,c2_target);
+    assert_eq(c_target,c2_target)?;
 
     //check equality match = target
     assert_eq(c_match,c_target)?;
@@ -1057,7 +1058,7 @@ pub fn ite_not_cond(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     let (c_match,x_match,y_match) = match_term_err!((ite (not c_match) x_match y_match) = rmatch)?;
 
     //check target
-    let (c_target,y_target,x_target) = match_term_err!((ite c_target y_target x_target) = rmatch)?;
+    let (c_target,y_target,x_target) = match_term_err!((ite c_target y_target x_target) = rtarget)?;
 
     //check equality match = target
     assert_eq(c_match,c_target)?;
@@ -1308,6 +1309,36 @@ pub fn eq_symm(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     Ok(())
 }
 
+//(define-rule distinct-binary-elim ((t ?) (s ?)) (distinct t s) (not (= t s)))
+pub fn distinct_binary_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 3)?;
+    let t_args = &args[1];
+    let s_args = &args[2];
+    
+    //check match
+    let (t_match,s_match) = match_term_err!((distinct t_match s_match) = rmatch)?;
+
+    //check target
+    let (t_target,s_target) = match_term_err!((not (= t_target s_target)) = rtarget)?;
+
+    //check equality match = target
+    assert_eq(t_match,t_target)?;
+    assert_eq(s_match,s_target)?;
+
+    //check equality for arguments
+    assert_eq(t_match,t_args)?;
+    assert_eq(s_match,s_args)?;
+
+    Ok(())
+}
+
+
 
 
 
@@ -1348,7 +1379,7 @@ pub fn rare_error (RuleArgs {  .. }: RuleArgs) -> RuleResult {
 }
 
 pub fn get_rule(rule_name: &str) ->Rule {
-    (match rule_name {
+    match rule_name {
       // Boolean rewrites
 
       // rules without conditions or lists
@@ -1372,13 +1403,23 @@ pub fn get_rule(rule_name: &str) ->Rule {
       "bool-xor-elim" => bool_xor_elim,
       //"bool-not-xor-elim" => bool_not_xor_elim,
       
-      //"bool-not-eq-elim" => bool_not_eq_elim,
+      "bool-not-eq-elim1" => bool_not_eq_elim1,
+      "bool-not-eq-elim2" => bool_not_eq_elim2,
       
 
       "ite-then-true" => ite_then_true,
       "ite-else-false" => ite_else_false,
       "ite-then-false" => ite_then_false,
       "ite-else-true" => ite_else_true,
+
+      "ite-then-lookahead-self" => ite_then_lookahead_self,
+      "ite-else-lookahead-self" => ite_else_lookahead_self,
+
+      "ite-then-lookahead-not-self" => ite_then_lookahead_not_self,
+      "ite-else-lookahead-not-self" => ite_else_lookahead_not_self,
+
+      "ite-expand" => ite_expand,
+      "bool-not-ite-elim" => bool_not_ite_elim,
 
       // Conditional
       //"bool-not-true" => bool_not_true,
@@ -1404,14 +1445,14 @@ pub fn get_rule(rule_name: &str) ->Rule {
       //uf
       "eq-refl" => eq_refl,
       "eq-symm" => eq_symm,
-      //"distinct-binary-elim" => distinct_binary_elim,
+      "distinct-binary-elim" => distinct_binary_elim,
 
       _ => rare_error,
-    })
+    }
 }
 
 pub fn rare_rewrite(ra: RuleArgs) -> RuleResult {
-  let RuleArgs { conclusion, args, .. } = ra;
+  let RuleArgs { args, .. } = ra;
   assert_num_args(args, 1..)?;
   let t =
   match args[0].as_ref() {
