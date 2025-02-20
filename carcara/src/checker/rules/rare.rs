@@ -276,6 +276,71 @@ pub fn bool_impl_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     Ok(())
 }
 
+//(define-rule bool-dual-impl-eq ((t Bool) (s Bool)) (and (=> t s) (=> s t)) (= t s))
+pub fn bool_dual_impl_eq(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 3)?;
+    let t_args = &args[1];
+    let s_args = &args[2];
+    
+    //check match
+    let (temp1,temp2) = match_term_err!((and temp1 temp2) = rmatch)?;
+    let (t_match,s_match) = match_term_err!((=> t_match s_match) = temp1)?;
+    let (s2_match,t2_match) = match_term_err!((=> s2_match t2_match) = temp2)?;
+    assert_eq(t_match,t2_match)?;
+    assert_eq(s_match,s2_match)?;
+
+    //check target
+    let (t_target,s_target) = match_term_err!((= t_target s_target) = rtarget)?;
+
+    //check equality match = target
+    assert_eq(t_match,t_target)?;
+    assert_eq(s_match,s_target)?;
+
+    //check equality for arguments
+    assert_eq(t_match,t_args)?;
+    assert_eq(s_match,s_args)?;
+
+    Ok(())
+}
+
+//(define-rule bool-implies-de-morgan ((x Bool) (y Bool))
+//  (not (=> x y))
+//  (and x (not y)))
+pub fn bool_implies_de_morgan(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 3)?;
+    let x_args = &args[1];
+    let y_args = &args[2];
+    
+    //check match
+    let (x_match,y_match) = match_term_err!((not (=> x_match y_match)) = rmatch)?;
+
+    //check target
+    let (x_target,y_target) = match_term_err!((and x_target (not y_target)) = rtarget)?;
+
+    //check equality match = target
+    assert_eq(x_match,x_target)?;
+    assert_eq(y_match,y_target)?;
+
+    //check equality for arguments
+    assert_eq(x_match,x_args)?;
+    assert_eq(y_match,y_args)?;
+
+    Ok(())
+}
+
+
 //(define-rule bool-or-true ((xs Bool :list) (ys Bool :list)) (or xs true ys) true)
 pub fn bool_or_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
@@ -311,46 +376,6 @@ pub fn bool_or_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     Ok(())
 }
 
-//(define-rule* bool-or-false ((xs Bool :list) (ys Bool :list)) (or xs false ys) (or xs ys))
-/*pub fn bool_or_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
-
-
-    //check conclusion, split up in match and target
-    assert_clause_len(conclusion, 1)?;
-    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
-
-    //check arguments
-    assert_num_args(args, 3)?;
-    let xs_args = &args[1];
-    let xs_contents = match_term_err!((RareList ...) = xs_args)?;
-    let ys_args = &args[2];
-    let ys_contents = match_term_err!((RareList ...) = ys_args)?;
-
-    let mut pool = PrimitivePool::new(); //TODO: this is definitely not the right way
-    let zs_contents = [xs_contents,&[pool.bool_false()],ys_contents].concat().clone();    
-    let as_contents = [xs_contents,ys_contents].concat().clone();    
-    
-    //check match
-    let match_contents = match_term_err!((and ...) = rmatch)?;
-    assert_operation_len(Operator::Or, match_contents, zs_contents.len())?;
-    for (z, m) in zs_contents.clone().iter().zip(match_contents) {
-       assert_eq(z, m)?;
-    }
-
-    //check target
-    let target_contents = match_term_err!((or ...) = rtarget)?;
-    assert_operation_len(Operator::Or, target_contents, as_contents.len())?;
-    for (a, t) in as_contents.clone().iter().zip(target_contents) {
-       assert_eq(a, t)?;
-    }
-
-    //check equality match = target
-
-    //check equality for arguments
-
-    Ok(())
-}
-
 //(define-rule* bool-or-flatten ((xs Bool :list) (b Bool) (ys Bool :list) (zs Bool :list)) (or xs (or b ys) zs) (or xs b ys zs))
 pub fn bool_or_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
@@ -372,7 +397,7 @@ pub fn bool_or_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResul
     let cs_contents = [xs_contents,&[b_args.clone()],ys_contents,zs_contents].concat().clone();    
     
     //check match
-    let match_contents = match_term_err!((and ...) = rmatch)?;
+    let match_contents = match_term_err!((or ...) = rmatch)?;
     let xs_length = xs_contents.len();
     assert_operation_len(Operator::Or, match_contents, xs_length + zs_contents.len() + 1)?;
     for i in 0..xs_length {
@@ -399,8 +424,6 @@ pub fn bool_or_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResul
 
     Ok(())
 }
-*/
-
 
 //(define-rule bool-and-false ((xs Bool :list) (ys Bool :list)) (and xs false ys) false)
 pub fn bool_and_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
@@ -428,12 +451,7 @@ pub fn bool_and_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
 
     //check target
     let bot = rtarget;
-
-    if !bot.is_bool_false() {
-	return Err(CheckerError::ExpectedBoolConstant(
-            false,
-            bot.clone(),
-     ));}
+    check_if_false(bot.clone())?;
 
     //check equality match = target
 
@@ -441,6 +459,226 @@ pub fn bool_and_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
 
     Ok(())
 }
+
+//(define-rule* bool-and-flatten ((xs Bool :list) (b Bool) (ys Bool :list) (zs Bool :list)) (and xs (and b ys) zs) (and xs b ys zs))
+pub fn bool_and_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 3)?;
+    let xs_args = &args[1];
+    let xs_contents = match_term_err!((RareList ...) = xs_args)?;
+    let b_args = &args[2];
+    let ys_args = &args[3];
+    let ys_contents = match_term_err!((RareList ...) = ys_args)?;
+    let zs_args = &args[4];
+    let zs_contents = match_term_err!((RareList ...) = zs_args)?;
+
+    let as_contents = [&[b_args.clone()],ys_contents].concat().clone();    
+    let cs_contents = [xs_contents,&[b_args.clone()],ys_contents,zs_contents].concat().clone();    
+    
+    //check match
+    let match_contents = match_term_err!((and ...) = rmatch)?;
+    let xs_length = xs_contents.len();
+    assert_operation_len(Operator::And, match_contents, xs_length + zs_contents.len() + 1)?;
+    for i in 0..xs_length {
+       assert_eq(&xs_contents[i],&match_contents[i])?;
+    }
+    let match2_contents = match_term_err!((and ...) = &match_contents[xs_length])?;
+    for i in 0..as_contents.len() {
+       assert_eq(&as_contents[i],&match2_contents[i])?;
+    }
+    for i in xs_length+1..match_contents.len() {
+       assert_eq(&zs_contents[i],&match_contents[i])?;
+    }
+
+    //check target
+    let target_contents = match_term_err!((and ...) = rtarget)?;
+    assert_operation_len(Operator::And, target_contents, cs_contents.len())?;
+    for (c, t) in cs_contents.clone().iter().zip(target_contents) {
+       assert_eq(c, t)?;
+    }
+
+    //check equality match = target
+
+    //check equality for arguments
+
+    Ok(())
+}
+
+
+//(define-rule bool-and-conf ((xs Bool :list) (w Bool) (ys Bool :list) (zs Bool :list)) (and xs w ys (not w) zs) false)
+pub fn bool_and_conf(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    let mut pool = PrimitivePool::new(); //TODO: this is definitely not the right way
+    
+    //check arguments
+    assert_num_args(args, 3)?;
+    let xs_args = &args[1];
+    let xs_contents = match_term_err!((RareList ...) = xs_args)?;
+    let w_args = &args[2];
+    let w_not_args = &build_term!(pool, (not {w_args.clone()}));
+    let ys_args = &args[3];
+    let ys_contents = match_term_err!((RareList ...) = ys_args)?;
+    let zs_args = &args[4];
+    let zs_contents = match_term_err!((RareList ...) = zs_args)?;
+
+    let as_contents = [xs_contents,&[w_args.clone()],ys_contents,&[w_not_args.clone()],zs_contents].concat().clone();    
+    
+    //check match
+    let match_contents = match_term_err!((and ...) = rmatch)?;
+    let as_length = as_contents.len();
+
+    assert_operation_len(Operator::And, match_contents, as_length)?;
+    for i in 0..as_length {
+       assert_eq(&as_contents[i],&match_contents[i])?;
+    }
+
+    //check target
+    let bot = rtarget;
+    check_if_false(bot.clone())?;
+
+    //check equality match = target
+
+    //check equality for arguments
+
+    Ok(())
+}
+
+//(define-rule bool-and-conf2 ((xs Bool :list) (w Bool) (ys Bool :list) (zs Bool :list)) (and xs (not w) ys w zs) false)
+pub fn bool_and_conf2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    let mut pool = PrimitivePool::new(); //TODO: this is definitely not the right way
+    
+    //check arguments
+    assert_num_args(args, 3)?;
+    let xs_args = &args[1];
+    let xs_contents = match_term_err!((RareList ...) = xs_args)?;
+    let w_args = &args[2];
+    let w_not_args = &build_term!(pool, (not {w_args.clone()}));
+    let ys_args = &args[3];
+    let ys_contents = match_term_err!((RareList ...) = ys_args)?;
+    let zs_args = &args[4];
+    let zs_contents = match_term_err!((RareList ...) = zs_args)?;
+
+    let as_contents = [xs_contents,&[w_not_args.clone()],ys_contents,&[w_args.clone()],zs_contents].concat().clone();    
+    
+    //check match
+    let match_contents = match_term_err!((and ...) = rmatch)?;
+    let as_length = as_contents.len();
+
+    assert_operation_len(Operator::And, match_contents, as_length)?;
+    for i in 0..as_length {
+       assert_eq(&as_contents[i],&match_contents[i])?;
+    }
+
+    //check target
+    let bot = rtarget;
+    check_if_false(bot.clone())?;
+
+    //check equality match = target
+
+    //check equality for arguments
+
+    Ok(())
+}
+
+//(define-rule bool-or-taut ((xs Bool :list) (w Bool) (ys Bool :list) (zs Bool :list)) (or xs w ys (not w) zs) true)
+pub fn bool_or_taut(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    let mut pool = PrimitivePool::new(); //TODO: this is definitely not the right way
+    
+    //check arguments
+    assert_num_args(args, 3)?;
+    let xs_args = &args[1];
+    let xs_contents = match_term_err!((RareList ...) = xs_args)?;
+    let w_args = &args[2];
+    let w_not_args = &build_term!(pool, (not {w_args.clone()}));
+    let ys_args = &args[3];
+    let ys_contents = match_term_err!((RareList ...) = ys_args)?;
+    let zs_args = &args[4];
+    let zs_contents = match_term_err!((RareList ...) = zs_args)?;
+
+    let as_contents = [xs_contents,&[w_args.clone()],ys_contents,&[w_not_args.clone()],zs_contents].concat().clone();    
+    
+    //check match
+    let match_contents = match_term_err!((or ...) = rmatch)?;
+    let as_length = as_contents.len();
+
+    assert_operation_len(Operator::Or, match_contents, as_length)?;
+    for i in 0..as_length {
+       assert_eq(&as_contents[i],&match_contents[i])?;
+    }
+
+    //check target
+    let top = rtarget;
+    check_if_true(top.clone())?;
+
+    //check equality match = target
+
+    //check equality for arguments
+
+    Ok(())
+}
+
+//(define-rule bool-or-taut2 ((xs Bool :list) (w Bool) (ys Bool :list) (zs Bool :list)) (or xs (not w) ys w zs) true)
+pub fn bool_or_taut2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    let mut pool = PrimitivePool::new(); //TODO: this is definitely not the right way
+    
+    //check arguments
+    assert_num_args(args, 3)?;
+    let xs_args = &args[1];
+    let xs_contents = match_term_err!((RareList ...) = xs_args)?;
+    let w_args = &args[2];
+    let w_not_args = &build_term!(pool, (not {w_args.clone()}));
+    let ys_args = &args[3];
+    let ys_contents = match_term_err!((RareList ...) = ys_args)?;
+    let zs_args = &args[4];
+    let zs_contents = match_term_err!((RareList ...) = zs_args)?;
+
+    let as_contents = [xs_contents,&[w_not_args.clone()],ys_contents,&[w_args.clone()],zs_contents].concat().clone();    
+    
+    //check match
+    let match_contents = match_term_err!((or ...) = rmatch)?;
+    let as_length = as_contents.len();
+
+    assert_operation_len(Operator::Or, match_contents, as_length)?;
+    for i in 0..as_length {
+       assert_eq(&as_contents[i],&match_contents[i])?;
+    }
+
+    //check target
+    let bot = rtarget;
+    check_if_false(bot.clone())?;
+
+    //check equality match = target
+
+    //check equality for arguments
+
+    Ok(())
+}
+
+
 
 //(define-rule bool-xor-refl ((x Bool)) (xor x x) false)
 pub fn bool_xor_refl(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
@@ -1394,6 +1632,10 @@ pub fn get_rule(rule_name: &str) ->Rule {
       "bool-impl-true1" => bool_impl_true1,
       "bool-impl-true2" => bool_impl_true2,
       "bool-impl-elim" => bool_impl_elim,
+      
+      "bool-dual-impl-eq" => bool_dual_impl_eq,
+
+      "bool-implies-de-morgan" => bool_implies_de_morgan,
 
       "bool-xor-refl" => bool_xor_refl,
       "bool-xor-nrefl" => bool_xor_nrefl,
@@ -1428,7 +1670,18 @@ pub fn get_rule(rule_name: &str) ->Rule {
 
       //lists
       "bool-or-true" => bool_or_true,
+      "bool-or-flatten" => bool_or_flatten,
+
       "bool-and-false" => bool_and_false,
+      "bool-and-flatten" => bool_and_flatten,
+
+      "bool-and-conf" => bool_and_conf,
+      "bool-and-conf2" => bool_and_conf2,
+      "bool-or-taut" => bool_or_taut,
+      "bool-or-taut2" => bool_or_taut2,
+
+      //"bool-or-de-morgan" => bool_or_de_morgan,
+      //"bool-and-de-morgan" => bool_and_de_morgan,
       
       
       // builtin
