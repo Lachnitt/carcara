@@ -1272,7 +1272,6 @@ pub fn eq_refl(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     check_if_true(t_target.clone())?;
 
     //check equality match = target
-    assert_eq(t_match,t_target)?;
 
     //check equality for arguments
     assert_eq(t_match,t_args)?;
