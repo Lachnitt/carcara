@@ -27,6 +27,8 @@ pub fn check_if_false(bot:Rc<Term>) -> RuleResult {
 }
 
 //(define-rule bool-double-not-elim ((t Bool)) (not (not t)) t)
+//match: (not (not t_match))
+//target: t_target
 pub fn bool_double_not_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -39,20 +41,18 @@ pub fn bool_double_not_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> Rule
     
     //check match
     let t_match = match_term_err!((not (not t)) = rmatch)?;
+    assert_eq(t_match,t_args)?;
 
     //check target
     let t_target = rtarget;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
+    assert_eq(t_target,t_args)?;
 
     Ok(())
 }
 
 //(define-rule bool-eq-true ((t Bool)) (= t true) t)
+//match: (= t_match top)
+//target: t_target
 pub fn bool_eq_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -66,20 +66,18 @@ pub fn bool_eq_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     //check match
     let (t_match,top) = match_term_err!((= t_match top) = rmatch)?;
     check_if_true(top.clone())?;
+    assert_eq(t_match,t_args)?;
 
     //check target
     let t_target = rtarget;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
+    assert_eq(t_target,t_args)?;
 
     Ok(())
 }
 
 //(define-rule bool-eq-false ((t bool)) (= t false) (not t))
+//match: (= t_match bot)
+//target: (not t_target)
 pub fn bool_eq_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -93,20 +91,18 @@ pub fn bool_eq_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     //check match
     let (t_match,bot) = match_term_err!((= t_match bot) = rmatch)?;
     check_if_false(bot.clone())?;
+    assert_eq(t_match,t_args)?;
 
     //check target
     let t_target = match_term_err!((not t_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
+    assert_eq(t_target,t_args)?;
 
     Ok(())
 }
 
 //(define-rule bool-eq-nrefl ((x Bool)) (= x (not x)) false)
+//match: (= x_match (not x2_match))
+//target: bot
 pub fn bool_eq_nrefl(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -120,20 +116,18 @@ pub fn bool_eq_nrefl(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     //check match
     let (t_match,t_match2) = match_term_err!((= t_match (not t_match2)) = rmatch)?;
     assert_eq(t_match,t_match2)?;
+    assert_eq(t_match,t_args)?;
 
     //check target
-    let t_target = rtarget;
-    check_if_false(t_target.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
+    let bot = rtarget;
+    check_if_false(bot.clone())?;
 
     Ok(())
 }
 
 //(define-rule bool-impl-false1 ((t Bool)) (=> t false) (not t))
+//match: (=> t_match bot)
+//target: (not t_target)
 pub fn bool_impl_false1(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -146,27 +140,19 @@ pub fn bool_impl_false1(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResu
     
     //check match
     let (t_match,bot) = match_term_err!((=> t_match bot) = rmatch)?;
-
-    if !bot.is_bool_false() {
-	return Err(CheckerError::ExpectedBoolConstant(
-            false,
-            bot.clone(),
-     ));}
+    check_if_false(bot.clone())?;
+    assert_eq(t_match,t_args)?;
 
     //check target
     let t_target = match_term_err!((not t_target) = rtarget)?;
-    check_if_true(t_target.clone())?;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
+    assert_eq(t_target,t_args)?;
 
     Ok(())
 }
 
 //(define-rule bool-impl-false2 ((t Bool)) (=> false t) true)
+//match: (=> bot t_match)
+//target: top
 pub fn bool_impl_false2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -180,20 +166,18 @@ pub fn bool_impl_false2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResu
     //check match
     let (t_match,bot) = match_term_err!((=> bot t_match) = rmatch)?;
     check_if_false(bot.clone())?;
+    assert_eq(t_match,t_args)?;
 
     //check target
-    let t_target = rtarget;
-    check_if_true(t_target.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
+    let top = rtarget;
+    check_if_true(top.clone())?;
 
     Ok(())
 }
 
 //(define-rule bool-impl-true1 ((t Bool)) (=> t true) true)
+//match: (=> t_match top_match)
+//target: top_target
 pub fn bool_impl_true1(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -205,22 +189,20 @@ pub fn bool_impl_true1(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResul
     let t_args = &args[1];
     
     //check match
-    let (t_match,top) = match_term_err!((=> t_match top) = rmatch)?;
-    check_if_true(top.clone())?;
+    let (t_match,top_match) = match_term_err!((=> t_match top_match) = rmatch)?;
+    check_if_true(top_match.clone())?;
+    assert_eq(t_match,t_args)?;
 
     //check target
-    let t_target = rtarget;
-    check_if_true(t_target.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
+    let top_match = rtarget;
+    check_if_true(top_match.clone())?;
 
     Ok(())
 }
 
 //(define-rule bool-impl-true2 ((t Bool)) (=> true t) t)
+//match: (=> top t_match)
+//target: t_target
 pub fn bool_impl_true2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -234,20 +216,18 @@ pub fn bool_impl_true2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResul
     //check match
     let (top,t_match) = match_term_err!((=> top t_match) = rmatch)?;
     check_if_true(top.clone())?;
+    assert_eq(t_match,t_args)?;
 
     //check target
     let t_target = rtarget;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
+    assert_eq(t_target,t_args)?;
 
     Ok(())
 }
 
 //(define-rule bool-impl-elim ((t Bool) (s Bool)) (=> t s) (or (not t) s))
+//match: (=> t_match s_match)
+//target: (or (not t_target) s_target)
 pub fn bool_impl_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -261,22 +241,22 @@ pub fn bool_impl_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     
     //check match
     let (t_match,s_match) = match_term_err!((=> t_match s_match) = rmatch)?;
+    assert_eq(t_match,t_args)?;
+    assert_eq(s_match,s_args)?;
 
     //check target
     let (t_target,s_target) = match_term_err!((or (not t_target) s_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-    assert_eq(s_match,s_target)?;
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
-    assert_eq(s_match,s_args)?;
+    assert_eq(t_target,t_args)?;
+    assert_eq(s_target,s_args)?;
 
     Ok(())
 }
 
 //(define-rule bool-dual-impl-eq ((t Bool) (s Bool)) (and (=> t s) (=> s t)) (= t s))
+//ms1: (=> t_match s_match)
+//ms2: (=> s2_match t2_match)
+//match: (and ms1 ms2)
+//target: (= t_target s_target)
 pub fn bool_dual_impl_eq(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -289,59 +269,26 @@ pub fn bool_dual_impl_eq(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleRes
     let s_args = &args[2];
     
     //check match
-    let (temp1,temp2) = match_term_err!((and temp1 temp2) = rmatch)?;
-    let (t_match,s_match) = match_term_err!((=> t_match s_match) = temp1)?;
-    let (s2_match,t2_match) = match_term_err!((=> s2_match t2_match) = temp2)?;
+    let (ms1,ms2) = match_term_err!((and ms1 ms2) = rmatch)?;
+    let (t_match,s_match) = match_term_err!((=> t_match s_match) = ms1)?;
+    let (s2_match,t2_match) = match_term_err!((=> s2_match t2_match) = ms2)?;
     assert_eq(t_match,t2_match)?;
     assert_eq(s_match,s2_match)?;
-
-    //check target
-    let (t_target,s_target) = match_term_err!((= t_target s_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-    assert_eq(s_match,s_target)?;
-
-    //check equality for arguments
     assert_eq(t_match,t_args)?;
     assert_eq(s_match,s_args)?;
 
-    Ok(())
-}
-
-//(define-rule bool-implies-de-morgan ((x Bool) (y Bool))
-//  (not (=> x y))
-//  (and x (not y)))
-pub fn bool_implies_de_morgan(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
-
-    //check conclusion, split up in match and target
-    assert_clause_len(conclusion, 1)?;
-    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
-
-    //check arguments
-    assert_num_args(args, 3)?;
-    let x_args = &args[1];
-    let y_args = &args[2];
-    
-    //check match
-    let (x_match,y_match) = match_term_err!((not (=> x_match y_match)) = rmatch)?;
-
     //check target
-    let (x_target,y_target) = match_term_err!((and x_target (not y_target)) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
-    assert_eq(y_match,y_args)?;
+    let (t_target,s_target) = match_term_err!((= t_target s_target) = rtarget)?;
+    assert_eq(t_target,t_args)?;
+    assert_eq(s_target,s_args)?;
 
     Ok(())
 }
-
 
 //(define-rule bool-or-true ((xs Bool :list) (ys Bool :list)) (or xs true ys) true)
+// match: (or xs true ys)
+// match_contents: xs, true, ys
+// target: top
 pub fn bool_or_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -356,27 +303,29 @@ pub fn bool_or_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     let ys_contents = match_term_err!((RareList ...) = ys_args)?;
 
     let mut pool = PrimitivePool::new(); //TODO: this is definitely not the right way
-    let zs_contents = [xs_contents,&[pool.bool_true()],ys_contents].concat().clone();    
     
     //check match
-    let match_contents = match_term_err!((and ...) = rmatch)?;
-    assert_operation_len(Operator::Or, match_contents, xs_contents.len() + ys_contents.len() + 1)?;
-    for (z, m) in zs_contents.clone().iter().zip(match_contents) {
-       assert_eq(z, m)?;
+    let match_contents = match_term_err!((or ...) = rmatch)?;
+    let match_spec_contents = [xs_contents,&[pool.bool_true()],ys_contents].concat().clone();    
+    assert_operation_len(Operator::Or, match_contents, match_spec_contents.len())?;
+    for i in 0..match_contents.len() {
+       assert_eq(&match_contents[i],&match_spec_contents[i])?;
     }
 
     //check target
     let top = rtarget;
     check_if_true(top.clone())?;
 
-    //check equality match = target
-
-    //check equality for arguments
-
     Ok(())
 }
 
 //(define-rule* bool-or-flatten ((xs Bool :list) (b Bool) (ys Bool :list) (zs Bool :list)) (or xs (or b ys) zs) (or xs b ys zs))
+//ms1: (or b ys)
+//ms1_contents: b, ys
+//match_contents: xs,(or b ys),zs
+//match: (or xs (or b ys) zs)
+//target_contents: xs, b, ys, zs
+//target: (or xs b ys zs)
 pub fn bool_or_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -393,39 +342,40 @@ pub fn bool_or_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResul
     let zs_args = &args[4];
     let zs_contents = match_term_err!((RareList ...) = zs_args)?;
 
-    let as_contents = [&[b_args.clone()],ys_contents].concat().clone();    
-    let cs_contents = [xs_contents,&[b_args.clone()],ys_contents,zs_contents].concat().clone();    
     
     //check match
     let match_contents = match_term_err!((or ...) = rmatch)?;
+
     let xs_length = xs_contents.len();
     assert_operation_len(Operator::Or, match_contents, xs_length + zs_contents.len() + 1)?;
     for i in 0..xs_length {
        assert_eq(&xs_contents[i],&match_contents[i])?;
     }
-    let match2_contents = match_term_err!((or ...) = &match_contents[xs_length])?;
-    for i in 0..as_contents.len() {
-       assert_eq(&as_contents[i],&match2_contents[i])?;
+    let ms1_spec_contents = [&[b_args.clone()],ys_contents].concat().clone();    
+    let ms1_contents = match_term_err!((or ...) = &match_contents[xs_length])?;
+    assert_operation_len(Operator::Or, match_contents, ms1_spec_contents.len())?;
+    for i in 0.. ms1_contents.len() {
+       assert_eq(&ms1_contents[i],&ms1_spec_contents[i])?;
     }
     for i in xs_length+1..match_contents.len() {
        assert_eq(&zs_contents[i],&match_contents[i])?;
     }
 
     //check target
+    let target_spec_contents = [xs_contents,&[b_args.clone()],ys_contents,zs_contents].concat().clone();
     let target_contents = match_term_err!((or ...) = rtarget)?;
-    assert_operation_len(Operator::Or, target_contents, cs_contents.len())?;
-    for (c, t) in cs_contents.clone().iter().zip(target_contents) {
-       assert_eq(c, t)?;
+    assert_operation_len(Operator::Or, target_contents, target_spec_contents.len())?;
+    for i in 0..target_contents.len() {
+       assert_eq(&target_contents[i],&target_spec_contents[i])?;
     }
-
-    //check equality match = target
-
-    //check equality for arguments
 
     Ok(())
 }
 
 //(define-rule bool-and-false ((xs Bool :list) (ys Bool :list)) (and xs false ys) false)
+// match: (and xs false ys)
+// match_contents: xs, mbot, ys
+// target: tbot
 pub fn bool_and_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -434,33 +384,35 @@ pub fn bool_and_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
 
     //check arguments
     assert_num_args(args, 3)?;
-    let xs_args = &args[1];//(rare-list (not (= y$n1s8 y$v_k_Table)) (not (= y$n255s8 y$v_k_Table)))invalid
+    let xs_args = &args[1];
     let xs_contents = match_term_err!((RareList ...) = xs_args)?;
     let ys_args = &args[2];
     let ys_contents = match_term_err!((RareList ...) = ys_args)?;
 
     let mut pool = PrimitivePool::new(); //TODO: this is definitely not the right way
-    let zs_contents = [xs_contents,&[pool.bool_false()],ys_contents].concat().clone();    
     
     //check match
     let match_contents = match_term_err!((and ...) = rmatch)?;
-    assert_operation_len(Operator::Or, match_contents, xs_contents.len() + ys_contents.len() + 1)?;
-    for (z, m) in zs_contents.clone().iter().zip(match_contents) {
-       assert_eq(z, m)?;
+    let match_spec_contents = [xs_contents,&[pool.bool_false()],ys_contents].concat().clone();    
+    assert_operation_len(Operator::And, match_contents, match_spec_contents.len())?;
+    for i in 0..match_contents.len() {
+       assert_eq(&match_contents[i],&match_spec_contents[i])?;
     }
 
     //check target
-    let bot = rtarget;
-    check_if_false(bot.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
+    let tbot = rtarget;
+    check_if_false(tbot.clone())?;
 
     Ok(())
 }
 
 //(define-rule* bool-and-flatten ((xs Bool :list) (b Bool) (ys Bool :list) (zs Bool :list)) (and xs (and b ys) zs) (and xs b ys zs))
+//ms1: (and b ys)
+//ms1_contents: b, ys
+//match_contents: xs,(and b ys),zs
+//match: (and xs (and b ys) zs)
+//target_contents: xs, b, ys, zs
+//target: (and xs b ys zs)
 pub fn bool_and_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
 
     //check conclusion, split up in match and target
@@ -477,38 +429,35 @@ pub fn bool_and_flatten(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResu
     let zs_args = &args[4];
     let zs_contents = match_term_err!((RareList ...) = zs_args)?;
 
-    let as_contents = [&[b_args.clone()],ys_contents].concat().clone();    
-    let cs_contents = [xs_contents,&[b_args.clone()],ys_contents,zs_contents].concat().clone();    
     
     //check match
     let match_contents = match_term_err!((and ...) = rmatch)?;
+
     let xs_length = xs_contents.len();
     assert_operation_len(Operator::And, match_contents, xs_length + zs_contents.len() + 1)?;
     for i in 0..xs_length {
        assert_eq(&xs_contents[i],&match_contents[i])?;
     }
-    let match2_contents = match_term_err!((and ...) = &match_contents[xs_length])?;
-    for i in 0..as_contents.len() {
-       assert_eq(&as_contents[i],&match2_contents[i])?;
+    let ms1_spec_contents = [&[b_args.clone()],ys_contents].concat().clone();    
+    let ms1_contents = match_term_err!((and ...) = &match_contents[xs_length])?;
+    assert_operation_len(Operator::And, match_contents, ms1_spec_contents.len())?;
+    for i in 0.. ms1_contents.len() {
+       assert_eq(&ms1_contents[i],&ms1_spec_contents[i])?;
     }
     for i in xs_length+1..match_contents.len() {
        assert_eq(&zs_contents[i],&match_contents[i])?;
     }
 
     //check target
+    let target_spec_contents = [xs_contents,&[b_args.clone()],ys_contents,zs_contents].concat().clone();
     let target_contents = match_term_err!((and ...) = rtarget)?;
-    assert_operation_len(Operator::And, target_contents, cs_contents.len())?;
-    for (c, t) in cs_contents.clone().iter().zip(target_contents) {
-       assert_eq(c, t)?;
+    assert_operation_len(Operator::And, target_contents, target_spec_contents.len())?;
+    for i in 0..target_contents.len() {
+       assert_eq(&target_contents[i],&target_spec_contents[i])?;
     }
-
-    //check equality match = target
-
-    //check equality for arguments
 
     Ok(())
 }
-
 
 //(define-rule bool-and-conf ((xs Bool :list) (w Bool) (ys Bool :list) (zs Bool :list)) (and xs w ys (not w) zs) false)
 pub fn bool_and_conf(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
@@ -529,25 +478,20 @@ pub fn bool_and_conf(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     let ys_contents = match_term_err!((RareList ...) = ys_args)?;
     let zs_args = &args[4];
     let zs_contents = match_term_err!((RareList ...) = zs_args)?;
-
-    let as_contents = [xs_contents,&[w_args.clone()],ys_contents,&[w_not_args.clone()],zs_contents].concat().clone();    
     
     //check match
+    let match_spec_contents = [xs_contents,&[w_args.clone()],ys_contents,&[w_not_args.clone()],zs_contents].concat().clone();    
     let match_contents = match_term_err!((and ...) = rmatch)?;
-    let as_length = as_contents.len();
+    let match_spec_length = match_spec_contents.len();
 
-    assert_operation_len(Operator::And, match_contents, as_length)?;
-    for i in 0..as_length {
-       assert_eq(&as_contents[i],&match_contents[i])?;
+    assert_operation_len(Operator::And, match_contents, match_spec_length)?;
+    for i in 0..match_spec_length {
+       assert_eq(&match_spec_contents[i],&match_contents[i])?;
     }
 
     //check target
     let bot = rtarget;
     check_if_false(bot.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
 
     Ok(())
 }
@@ -572,24 +516,20 @@ pub fn bool_and_conf2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     let zs_args = &args[4];
     let zs_contents = match_term_err!((RareList ...) = zs_args)?;
 
-    let as_contents = [xs_contents,&[w_not_args.clone()],ys_contents,&[w_args.clone()],zs_contents].concat().clone();    
     
     //check match
+    let match_spec_contents = [xs_contents,&[w_not_args.clone()],ys_contents,&[w_args.clone()],zs_contents].concat().clone();    
     let match_contents = match_term_err!((and ...) = rmatch)?;
-    let as_length = as_contents.len();
+    let match_spec_length = match_spec_contents.len();
 
-    assert_operation_len(Operator::And, match_contents, as_length)?;
-    for i in 0..as_length {
-       assert_eq(&as_contents[i],&match_contents[i])?;
+    assert_operation_len(Operator::And, match_contents, match_spec_length)?;
+    for i in 0..match_spec_length {
+       assert_eq(&match_spec_contents[i],&match_contents[i])?;
     }
 
     //check target
     let bot = rtarget;
     check_if_false(bot.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
 
     Ok(())
 }
@@ -614,24 +554,20 @@ pub fn bool_or_taut(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     let zs_args = &args[4];
     let zs_contents = match_term_err!((RareList ...) = zs_args)?;
 
-    let as_contents = [xs_contents,&[w_args.clone()],ys_contents,&[w_not_args.clone()],zs_contents].concat().clone();    
     
     //check match
     let match_contents = match_term_err!((or ...) = rmatch)?;
-    let as_length = as_contents.len();
 
-    assert_operation_len(Operator::Or, match_contents, as_length)?;
-    for i in 0..as_length {
-       assert_eq(&as_contents[i],&match_contents[i])?;
+    let match_spec_contents = [xs_contents,&[w_args.clone()],ys_contents,&[w_not_args.clone()],zs_contents].concat().clone();    
+    let match_spec_length = match_spec_contents.len();
+    assert_operation_len(Operator::Or, match_contents, match_spec_length)?;
+    for i in 0..match_spec_length {
+       assert_eq(&match_spec_contents[i],&match_contents[i])?;
     }
 
     //check target
     let top = rtarget;
     check_if_true(top.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
 
     Ok(())
 }
@@ -656,24 +592,259 @@ pub fn bool_or_taut2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     let zs_args = &args[4];
     let zs_contents = match_term_err!((RareList ...) = zs_args)?;
 
-    let as_contents = [xs_contents,&[w_not_args.clone()],ys_contents,&[w_args.clone()],zs_contents].concat().clone();    
     
     //check match
+    let match_spec_contents = [xs_contents,&[w_not_args.clone()],ys_contents,&[w_args.clone()],zs_contents].concat().clone();    
     let match_contents = match_term_err!((or ...) = rmatch)?;
-    let as_length = as_contents.len();
-
-    assert_operation_len(Operator::Or, match_contents, as_length)?;
-    for i in 0..as_length {
-       assert_eq(&as_contents[i],&match_contents[i])?;
+    let match_spec_length = match_spec_contents.len();
+    assert_operation_len(Operator::Or, match_contents, match_spec_length)?;
+    for i in 0..match_spec_length {
+       assert_eq(&match_spec_contents[i],&match_contents[i])?;
     }
 
     //check target
     let bot = rtarget;
     check_if_false(bot.clone())?;
 
-    //check equality match = target
+    Ok(())
+}
 
+//(define-rule* bool-or-de-morgan ((x Bool) (y Bool) (zs Bool :list)) 
+//  (not (or x y zs))
+//  (and (not x) (not (or y zs)))
+//ms1: (or x y zs)
+//ts1: (or y zs)
+pub fn bool_or_de_morgan(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 4)?;
+    let x_args = &args[1];
+    let y_args = &args[2];
+    let zs_args = &args[3];
+    let zs_contents = match_term_err!((RareList ...) = zs_args)?;
+
+    
+    //check match
+    let ms1 = match_term_err!((not ms1) = rmatch)?;
+    let ms1_contents = match_term_err!((or ...) = ms1)?;
+    let ms1_spec_contents = [&[x_args.clone()],&[y_args.clone()],zs_contents].concat().clone();    
+    let ms1_spec_length = ms1_spec_contents.len();
+    assert_operation_len(Operator::Or, ms1_contents, ms1_spec_length)?;
+    for i in 0..ms1_spec_length {
+       assert_eq(&ms1_spec_contents[i],&ms1_contents[i])?;
+    }
+
+    //check target
+    let (x_target,ms2) = match_term_err!((and (not x_target) (not ms2)) = rtarget)?;
+    let ms2_contents = match_term_err!((or ...) = ms2)?;
+    let ms2_spec_contents = [&[y_args.clone()],zs_contents].concat().clone();    
+    let ms2_spec_length = ms2_spec_contents.len();
+    assert_operation_len(Operator::Or, ms1_contents, ms1_spec_length)?;
+    for i in 0..ms2_spec_length {
+       assert_eq(&ms2_spec_contents[i],&ms2_contents[i])?;
+    }
+    assert_eq(x_target,x_args)?;
+    Ok(())
+}
+
+//(define-rule bool-implies-de-morgan ((x Bool) (y Bool))
+//  (not (=> x y))
+//  (and x (not y)))
+pub fn bool_implies_de_morgan(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 3)?;
+    let x_args = &args[1];
+    let y_args = &args[2];
+    
+    //check match
+    let (x_match,y_match) = match_term_err!((not (=> x_match y_match)) = rmatch)?;
+    assert_eq(x_match,x_args)?;
+    assert_eq(y_match,y_args)?;
+
+    //check target
+    let (x_target,y_target) = match_term_err!((and x_target (not y_target)) = rtarget)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
+
+    Ok(())
+}
+
+//define-rule* bool-and-de-morgan ((x Bool) (y Bool) (zs Bool :list)) 
+//  (not (and x y zs))
+//  (or (not x) (not (and y zs))))
+//ms1: (or x y zs)
+//ts1: (or y zs)
+pub fn bool_and_de_morgan(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 4)?;
+    let x_args = &args[1];
+    let y_args = &args[2];
+    let zs_args = &args[3];
+    let zs_contents = match_term_err!((RareList ...) = zs_args)?;
+
+    
+    //check match
+    let ms1 = match_term_err!((not ms1) = rmatch)?;
+    let ms1_contents = match_term_err!((and ...) = ms1)?;
+    let ms1_spec_contents = [&[x_args.clone()],&[y_args.clone()],zs_contents].concat().clone();    
+    let ms1_spec_length = ms1_spec_contents.len();
+    assert_operation_len(Operator::And, ms1_contents, ms1_spec_length)?;
+    for i in 0..ms1_spec_length {
+       assert_eq(&ms1_spec_contents[i],&ms1_contents[i])?;
+    }
+
+    //check target
+    let (x_target,ms2) = match_term_err!((or (not x_target) (not ms2)) = rtarget)?;
+    let ms2_contents = match_term_err!((and ...) = ms2)?;
+    let ms2_spec_contents = [&[y_args.clone()],zs_contents].concat().clone();    
+    let ms2_spec_length = ms2_spec_contents.len();
+    assert_operation_len(Operator::And, ms1_contents, ms1_spec_length)?;
+    for i in 0..ms2_spec_length {
+       assert_eq(&ms2_spec_contents[i],&ms2_contents[i])?;
+    }
+    assert_eq(x_target,x_args)?;
+    Ok(())
+}
+
+//(define-rule* bool-or-and-distrib ((y1 Bool) (y2 Bool) (y3 Bool :list) (zs Bool :list))
+//  (or (and y1 y2 y3) zs)
+//  (and (or y1 zs) (or (and y2 y3) zs)))
+// ms1: (and y1 y2 y3)
+// ts1: (or y1 zs)
+// ts2: (and y2 y3)
+// ts3: (or (and y2 y3) zs)
+pub fn bool_or_and_distrib(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 5)?;
+    let y1_args = &args[1];
+    let y2_args = &args[2];
+    let ys_args = &args[3];
+    let ys_contents = match_term_err!((RareList ...) = ys_args)?;
+    let zs_args = &args[4];
+    let zs_contents = match_term_err!((RareList ...) = zs_args)?;
+
+    
+    //check match
+//(define-rule* bool-or-and-distrib ((y1 Bool) (y2 Bool) (ys Bool :list) (zs Bool :list))
+//  (or (and y1 y2 ys) zs)
+//  (and (or y1 zs) (or (and y2 ys) zs)))
+// ms1: (and y1 y2 ys)
+    let match_contents = match_term_err!((or ...) = rmatch)?;
+    let ms1 = &match_contents[0];
+    let ms1_contents = match_term_err!((and ...) = ms1)?;
+    let ms1_spec_contents = [&[y1_args.clone()],&[y2_args.clone()],ys_contents].concat().clone();    
+    let ms1_spec_length = ms1_spec_contents.len();
+    assert_operation_len(Operator::And, ms1_contents, ms1_spec_length)?;
+    for i in 0..ms1_spec_length {
+       assert_eq(&ms1_spec_contents[i],&ms1_contents[i])?;
+    }
+    for i in 2..zs_contents.len()+2 {
+       assert_eq(&match_contents[i],&zs_contents[i])?;
+    }
+
+
+    //check target
+    //  (and (or y1 zs) (or (and y2 ys) zs)))
+    // ts1: (or y1 zs)
+    // ts2: (or (and y2 ys) zs)
+    // ts3: (and y2 ys)
+    let (ts1,ts2) = match_term_err!((and ts1 ts2) = rtarget)?;
+    let ts1_contents = match_term_err!((or ...) = ts1)?; // (or y1 zs)
+    let ts2_contents = match_term_err!((or ...) = ts2)?; // (or (and y2 ys) zs)
+    let ts3_contents = match_term_err!((and ...) = &ts2_contents[0])?; // (and y2 ys)
+
+    // check ts1
+    assert_eq(&ts1_contents[0],y1_args)?;
+    assert_operation_len(Operator::Or, ts1_contents, zs_contents.len() + 1)?;
+    for i in 1..zs_contents.len()+1 {
+       assert_eq(&ts1_contents[i],&zs_contents[i])?;
+    }
+
+    // check ts3
+    assert_eq(&ts3_contents[0],y2_args)?;
+    assert_operation_len(Operator::And, ts3_contents, ys_contents.len() + 1)?;
+    for i in 1..ys_contents.len()+1 {
+       assert_eq(&ts3_contents[i],&ys_contents[i])?;
+    }
+
+    // check ts2
+    assert_operation_len(Operator::Or, ts2_contents, zs_contents.len() + 1)?;
+    for i in 1..zs_contents.len()+1 {
+       assert_eq(&ts2_contents[i],&zs_contents[i])?;
+    }
+    Ok(())
+}
+
+
+
+//(define-rule* bool-implies-or-distrib ((y1 Bool) (y2 Bool) (ys Bool :list) (z Bool))
+//  (=> (or y1 y2 ys) z)
+//  (=> (or y2 ys) z)
+//  (and (=> y1 z) _))
+pub fn bool_implies_or_distrib(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 3)?;
+    let y1_args = &args[1];
+    let y2_args = &args[2];
+    let ys_args = &args[3];
+    let ys_contents = match_term_err!((RareList ...) = ys_args)?;
+    let z_args = &args[4];
+
+    let as_contents = [&[y1_args.clone()],&[y2_args.clone()],ys_contents].concat().clone();
+    
+    //check match
+    //  (=> (or y1 y2 ys) z)
+    let (temp1,z_match) = match_term_err!((=> temp1 z_match) = rmatch)?;
+    let temp2 = match_term_err!((or ...) = temp1)?;
+    let as_length = as_contents.len();
+    assert_operation_len(Operator::Or, temp2, as_length)?;
+    for i in 0..as_length {
+       assert_eq(&as_contents[i],&temp2[i])?;
+    }
+    assert_eq(z_match,z_args)?;
+
+
+    //check target
+    //  (and (=> y1 z) (=> (or y2 ys) z))
+    // 	ts1: (=> y1 z)
+    // 	ts2: (=> (or y2 ys) z)
+    // 	ts3: (or y2 ys)
+    // 	ts3_contents: y2 ys
+    let (ts1,ts2) = match_term_err!((and t_temp1 t_temp2) = rtarget)?;
+    let (y1_target,z_target) = match_term_err!((=> y1_target z_target) = ts1)?;
+    let (ts3,z2_target) = match_term_err!((=> ts3 z2_target) = ts2)?;
+    let ts3_contents = match_term_err!((or ...) = ts3)?;
+    assert_eq(z_target,z2_target)?;
+    assert_eq(&ts3_contents[0],y2_args)?;
+
+    //check equality match = target
     //check equality for arguments
+    assert_eq(y1_target,y1_args)?;
+    assert_eq(z_target,z_args)?;
 
     Ok(())
 }
@@ -689,20 +860,18 @@ pub fn bool_xor_refl(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
 
     //check arguments
     assert_num_args(args, 2)?;
-    let t_args = &args[1];
+    let x_args = &args[1];
     
     //check match
-    let (t_match,t_match2) = match_term_err!((xor t_match t_match2) = rmatch)?;
-    assert_eq(t_match,t_match2)?;
+    //match: (xor x_match x2_match)
+    let (x_match,x2_match) = match_term_err!((xor x_match x2_match) = rmatch)?;
+    assert_eq(x_match,x2_match)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
+    //target: bot
     let bot = rtarget;
     check_if_false(bot.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
 
     Ok(())
 }
@@ -718,19 +887,17 @@ pub fn bool_xor_nrefl(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     //check arguments
     assert_num_args(args, 2)?;
     let x_args = &args[1];
-    
+     
     //check match
-    let (x_match,x_match2) = match_term_err!((xor x_match (not x_match2)) = rmatch)?;
-    assert_eq(x_match,x_match2)?;
+    //match: (xor x_match (not x2_match))
+    let (x_match,x2_match) = match_term_err!((xor x_match (not x2_match)) = rmatch)?;
+    assert_eq(x_match,x2_match)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
-    let x_target = rtarget;
-    check_if_true(x_target.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
+    //target: top
+    let top = rtarget;
+    check_if_true(top.clone())?;
 
     Ok(())
 }
@@ -747,17 +914,15 @@ pub fn bool_xor_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     let x_args = &args[1];
     
     //check match
+    //match: (xor x_match bot)
     let (x_match,bot) = match_term_err!((xor x_match bot) = rmatch)?;
     check_if_false(bot.clone())?;
+    assert_eq(x_match,x_args)?;
 
     //check target
+    //target: x_target
     let x_target = rtarget;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -774,17 +939,15 @@ pub fn bool_xor_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     let x_args = &args[1];
     
     //check match
+    //match: (xor x_match top)
     let (x_match,top) = match_term_err!((xor x_match top) = rmatch)?;
     check_if_true(top.clone())?;
+    assert_eq(x_match,x_args)?;
 
     //check target
+    //target: x_target
     let x_target = match_term_err!((not x_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -802,18 +965,16 @@ pub fn bool_xor_comm(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     let y_args = &args[2];
     
     //check match
+    //match: (xor x_match y_match)
     let (x_match,y_match) = match_term_err!((xor x_match y_match) = rmatch)?;
-
-    //check target
-    let (y_target,x_target) = match_term_err!((xor y_target x_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
     assert_eq(x_match,x_args)?;
     assert_eq(y_match,y_args)?;
+
+    //check target
+    //target: (xor y_target x_target)
+    let (y_target,x_target) = match_term_err!((xor y_target x_target) = rtarget)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -832,17 +993,13 @@ pub fn bool_xor_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     
     //check match
     let (x_match,y_match) = match_term_err!((xor x_match y_match) = rmatch)?;
+    assert_eq(x_match,x_args)?;
+    assert_eq(y_match,y_args)?;
 
     //check target
     let (x_target,y_target) = match_term_err!((= (not x_target) y_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
-    assert_eq(y_match,y_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -861,17 +1018,13 @@ pub fn bool_not_eq_elim1(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleRes
     
     //check match
     let (x_match,y_match) = match_term_err!((not (= x_match y_match)) = rmatch)?;
+    assert_eq(x_match,x_args)?;
+    assert_eq(y_match,y_args)?;
 
     //check target
     let (x_target,y_target) = match_term_err!((= (not x_target) y_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
-    assert_eq(y_match,y_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -890,17 +1043,13 @@ pub fn bool_not_eq_elim2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleRes
     
     //check match
     let (x_match,y_match) = match_term_err!((not (= x_match y_match)) = rmatch)?;
+    assert_eq(x_match,x_args)?;
+    assert_eq(y_match,y_args)?;
 
     //check target
     let (x_target,y_target) = match_term_err!((= x_target (not y_target)) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
-    assert_eq(y_match,y_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -920,17 +1069,13 @@ pub fn ite_then_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     //check match
     let (c_match,top,x_match) = match_term_err!((ite c_match top x_match) = rmatch)?;
     check_if_true(top.clone())?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let (c_target,x_target) = match_term_err!((or c_target x_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -950,17 +1095,13 @@ pub fn ite_else_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     //check match
     let (c_match,x_match,bot) = match_term_err!((ite c_match x_match bot) = rmatch)?;
     check_if_false(bot.clone())?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let (c_target,x_target) = match_term_err!((or c_target x_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -981,17 +1122,13 @@ pub fn ite_then_false(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     //check match
     let (c_match,bot,x_match) = match_term_err!((ite c_match bot x_match) = rmatch)?;
     check_if_false(bot.clone())?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let (c_target,x_target) = match_term_err!((and (not c_target) x_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -1012,17 +1149,13 @@ pub fn ite_else_true(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     //check match
     let (c_match,x_match,top) = match_term_err!((ite c_match x_match top) = rmatch)?;
     check_if_false(top.clone())?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let (c_target,x_target) = match_term_err!((or (not c_target) x_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -1042,18 +1175,14 @@ pub fn ite_then_lookahead_self(RuleArgs { conclusion, args, .. }: RuleArgs) -> R
     //check match
     let (c_match,c2_match,x_match) = match_term_err!((ite c_match c_match x_match) = rmatch)?;
     assert_eq(c_match,c2_match)?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let (c_target,top,x_target) = match_term_err!((ite c_target top x_target) = rtarget)?;
     check_if_true(top.clone())?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -1073,18 +1202,14 @@ pub fn ite_else_lookahead_self(RuleArgs { conclusion, args, .. }: RuleArgs) -> R
     //check match
     let (c_match,x_match,c2_match) = match_term_err!((ite c_match x_match c2_match) = rmatch)?;
     assert_eq(c_match,c2_match)?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let (c_target,x_target,bot) = match_term_err!((ite c_target x_target bot) = rtarget)?;
     check_if_false(bot.clone())?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -1105,18 +1230,14 @@ pub fn ite_then_lookahead_not_self(RuleArgs { conclusion, args, .. }: RuleArgs) 
     //check match
     let (c_match,c2_match,x_match) = match_term_err!((ite c_match (not c2_match) x_match) = rmatch)?;
     assert_eq(c_match,c2_match)?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let (c_target,bot,x_target) = match_term_err!((ite c_target bot x_target) = rtarget)?;
     check_if_false(bot.clone())?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -1136,18 +1257,14 @@ pub fn ite_else_lookahead_not_self(RuleArgs { conclusion, args, .. }: RuleArgs) 
     //check match
     let (c_match,c2_match,x_match) = match_term_err!((ite c_match x_match (not c2_match)) = rmatch)?;
     assert_eq(c_match,c2_match)?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let (c_target,x_target,top) = match_term_err!((ite c_target x_target top) = rtarget)?;
     check_if_true(top.clone())?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -1167,22 +1284,18 @@ pub fn ite_expand(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     
     //check match
     let (c_match,x_match,y_match) = match_term_err!((ite c_match x_match y_match) = rmatch)?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
+    assert_eq(y_match,y_args)?;
 
     //check target
     let (temp1,temp2) = match_term_err!((and temp1 temp2) = rtarget)?;
     let (c_target,x_target) = match_term_err!((or (not c_target) x_target) = temp1)?;
     let (c2_target,y_target) = match_term_err!((or c2_target y_target) = temp2)?;
     assert_eq(c_target,c2_target)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
-    assert_eq(y_match,y_args)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -1202,19 +1315,15 @@ pub fn bool_not_ite_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleRes
     
     //check match
     let (c_match,x_match,y_match) = match_term_err!((not (ite c_match x_match y_match)) = rmatch)?;
-
-    //check target
-    let (c_target,x_target,y_target) = match_term_err!((ite c_target (not x_target) (not y_target)) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
     assert_eq(c_match,c_args)?;
     assert_eq(x_match,x_args)?;
     assert_eq(y_match,y_args)?;
+
+    //check target
+    let (c_target,x_target,y_target) = match_term_err!((ite c_target (not x_target) (not y_target)) = rtarget)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -1234,16 +1343,12 @@ pub fn ite_true_cond(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     //check match
     let (top,x_match,y_match) = match_term_err!((ite top x_match y_match) = rmatch)?;
     check_if_true(top.clone())?;
+    assert_eq(x_match,x_args)?;
+    assert_eq(y_match,y_args)?;
 
     //check target
     let x_target = rtarget;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
-    assert_eq(y_match,y_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -1264,16 +1369,12 @@ pub fn ite_false_cond(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult
     //check match
     let (bot,x_match,y_match) = match_term_err!((ite bot x_match y_match) = rmatch)?;
     check_if_false(bot.clone())?;
+    assert_eq(x_match,x_args)?;
+    assert_eq(y_match,y_args)?;
 
     //check target
     let y_target = rtarget;
-
-    //check equality match = target
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
-    assert_eq(x_match,x_args)?;
-    assert_eq(y_match,y_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -1294,19 +1395,15 @@ pub fn ite_not_cond(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     
     //check match
     let (c_match,x_match,y_match) = match_term_err!((ite (not c_match) x_match y_match) = rmatch)?;
-
-    //check target
-    let (c_target,y_target,x_target) = match_term_err!((ite c_target y_target x_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
     assert_eq(c_match,c_args)?;
     assert_eq(x_match,x_args)?;
     assert_eq(y_match,y_args)?;
+
+    //check target
+    let (c_target,y_target,x_target) = match_term_err!((ite c_target y_target x_target) = rtarget)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -1327,16 +1424,12 @@ pub fn ite_eq_branch(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     //check match
     let (c_match,x_match,x2_match) = match_term_err!((ite c_match x_match x2_match) = rmatch)?;
     assert_eq(x_match,x2_match)?;
+    assert_eq(c_match,c_args)?;
+    assert_eq(x_match,x_args)?;
 
     //check target
     let x_target = rtarget;
-
-    //check equality match = target
-    assert_eq(x_match,x_target)?;
-
-    //check equality for arguments
-    assert_eq(c_match,c_args)?;
-    assert_eq(x_match,x_args)?;
+    assert_eq(x_target,x_args)?;
 
     Ok(())
 }
@@ -1360,20 +1453,16 @@ pub fn ite_then_lookahead(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleRe
     let (c_match,temp1,z_match) = match_term_err!((ite c_match temp1 z_match) = rmatch)?;
     let (c2_match,x_match,y_match) = match_term_err!((ite c2_match x_match y_match) = temp1)?;
     assert_eq(c_match,c2_match)?;
-
-    //check target
-    let (c_target,x_target,z_target) = match_term_err!((ite c_target x_target z_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-    assert_eq(z_match,z_target)?;
-
-    //check equality for arguments
     assert_eq(c_match,c_args)?;
     assert_eq(x_match,x_args)?;
     assert_eq(y_match,y_args)?;
     assert_eq(z_match,z_args)?;
+
+    //check target
+    let (c_target,x_target,z_target) = match_term_err!((ite c_target x_target z_target) = rtarget)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(z_target,z_args)?;
 
     Ok(())
 }
@@ -1397,20 +1486,16 @@ pub fn ite_else_lookahead(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleRe
     let (c_match,x_match,temp1) = match_term_err!((ite c_match x_match temp1) = rmatch)?;
     let (c2_match,y_match,z_match) = match_term_err!((ite c2_match y_match z_match) = temp1)?;
     assert_eq(c_match,c2_match)?;
-
-    //check target
-    let (c_target,x_target,z_target) = match_term_err!((ite c_target x_target z_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-    assert_eq(z_match,z_target)?;
-
-    //check equality for arguments
     assert_eq(c_match,c_args)?;
     assert_eq(x_match,x_args)?;
     assert_eq(y_match,y_args)?;
     assert_eq(z_match,z_args)?;
+
+    //check target
+    let (c_target,x_target,z_target) = match_term_err!((ite c_target x_target z_target) = rtarget)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(z_target,z_args)?;
 
     Ok(())
 }
@@ -1434,20 +1519,16 @@ pub fn ite_then_neg_lookahead(RuleArgs { conclusion, args, .. }: RuleArgs) -> Ru
     let (c_match,temp1,z_match) = match_term_err!((ite c_match temp1 z_match) = rmatch)?;
     let (c2_match,x_match,y_match) = match_term_err!((ite (not c2_match) x_match y_match) = temp1)?;
     assert_eq(c_match,c2_match)?;
-
-    //check target
-    let (c_target,y_target,z_target) = match_term_err!((ite c_target y_target z_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(y_match,y_target)?;
-    assert_eq(z_match,z_target)?;
-
-    //check equality for arguments
     assert_eq(c_match,c_args)?;
     assert_eq(x_match,x_args)?;
     assert_eq(y_match,y_args)?;
     assert_eq(z_match,z_args)?;
+
+    //check target
+    let (c_target,y_target,z_target) = match_term_err!((ite c_target y_target z_target) = rtarget)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(y_target,y_args)?;
+    assert_eq(z_target,z_args)?;
 
     Ok(())
 }
@@ -1473,20 +1554,16 @@ pub fn ite_else_neg_lookahead(RuleArgs { conclusion, args, .. }: RuleArgs) -> Ru
     let (c_match,x_match,temp1) = match_term_err!((ite c_match x_match temp1) = rmatch)?;
     let (c2_match,y_match,z_match) = match_term_err!((ite (not c2_match) y_match z_match) = temp1)?;
     assert_eq(c_match,c2_match)?;
-
-    //check target
-    let (c_target,x_target,y_target) = match_term_err!((ite c_target x_target y_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(c_match,c_target)?;
-    assert_eq(x_match,x_target)?;
-    assert_eq(y_match,y_target)?;
-
-    //check equality for arguments
     assert_eq(c_match,c_args)?;
     assert_eq(x_match,x_args)?;
     assert_eq(y_match,y_args)?;
     assert_eq(z_match,z_args)?;
+
+    //check target
+    let (c_target,x_target,y_target) = match_term_err!((ite c_target x_target y_target) = rtarget)?;
+    assert_eq(c_target,c_args)?;
+    assert_eq(x_target,x_args)?;
+    assert_eq(y_target,y_args)?;
 
     Ok(())
 }
@@ -1505,15 +1582,11 @@ pub fn eq_refl(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     //check match
     let (t_match,t2_match) = match_term_err!((= t_match t2_match) = rmatch)?;
     assert_eq(t_match,t2_match)?;
+    assert_eq(t_match,t_args)?;
 
     //check target
     let t_target = rtarget;
     check_if_true(t_target.clone())?;
-
-    //check equality match = target
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
 
     Ok(())
 }
@@ -1532,17 +1605,13 @@ pub fn eq_symm(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
     
     //check match
     let (t_match,s_match) = match_term_err!((= t_match s_match) = rmatch)?;
+    assert_eq(t_match,t_args)?;
+    assert_eq(s_match,s_args)?;
 
     //check target
     let (s_target,t_target) = match_term_err!((= s_target t_target) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-    assert_eq(s_match,s_target)?;
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
-    assert_eq(s_match,s_args)?;
+    assert_eq(t_target,t_args)?;
+    assert_eq(s_target,s_args)?;
 
     Ok(())
 }
@@ -1561,17 +1630,13 @@ pub fn distinct_binary_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> Rule
     
     //check match
     let (t_match,s_match) = match_term_err!((distinct t_match s_match) = rmatch)?;
+    assert_eq(t_match,t_args)?;
+    assert_eq(s_match,s_args)?;
 
     //check target
     let (t_target,s_target) = match_term_err!((not (= t_target s_target)) = rtarget)?;
-
-    //check equality match = target
-    assert_eq(t_match,t_target)?;
-    assert_eq(s_match,s_target)?;
-
-    //check equality for arguments
-    assert_eq(t_match,t_args)?;
-    assert_eq(s_match,s_args)?;
+    assert_eq(t_target,t_args)?;
+    assert_eq(s_target,s_args)?;
 
     Ok(())
 }
@@ -1680,8 +1745,10 @@ pub fn get_rule(rule_name: &str) ->Rule {
       "bool-or-taut" => bool_or_taut,
       "bool-or-taut2" => bool_or_taut2,
 
-      //"bool-or-de-morgan" => bool_or_de_morgan,
-      //"bool-and-de-morgan" => bool_and_de_morgan,
+      "bool-or-de-morgan" => bool_or_de_morgan,
+      "bool-and-de-morgan" => bool_and_de_morgan,
+      "bool-or-and-distrib" => bool_or_and_distrib,
+      "bool-implies-or-distrib" => bool_implies_or_distrib,
       
       
       // builtin
