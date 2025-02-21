@@ -1642,6 +1642,48 @@ pub fn distinct_binary_elim(RuleArgs { conclusion, args, .. }: RuleArgs) -> Rule
 }
 
 
+// vp1: (cl (= (C?(= (C?t1:t2) t1):(= (C?t1:t2) t2)) true)) by rare_rewrite
+// ms1: (C1?(= (C2?t11:t21) t12):(= (C3?t13:t22) t23)) 
+// ms2: (= (C2?t11:t21) t12)
+// ms3: (= (C3?t13:t22) t23)
+// ms4: (C2?t11:t21)
+// ms5: (C3?t13:t22)
+pub fn ite_eq(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult {
+
+    //check conclusion, split up in match and target
+    assert_clause_len(conclusion, 1)?;
+    let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
+
+    //check arguments
+    assert_num_args(args, 4)?;
+    let C_args = &args[1];
+    let t1_args = &args[2];
+    let t2_args = &args[3];
+    
+    //check match
+    let (ms1,s_match) = match_term_err!((= ms1 ttop) = rmatch)?;
+    let (C1_match,ms2,ms3) = match_term_err!((ite C1_match ms2 ms3) = ms1)?;
+    let (ms4,t12_match) = match_term_err!((= ms4 t12_match) = ms2)?;
+    let (ms5,t23_match) = match_term_err!((= ms5 t23_match) = ms3)?;
+    let (C2_match,t11_match,t21_match) = match_term_err!((ite C2_match t11_match t21_match) = ms4)?;
+    let (C3_match,t13_match,t22_match) = match_term_err!((ite C3_match t13_match t22_match) = ms5)?;
+    assert_eq(C1_match,C2_match)?;
+    assert_eq(C1_match,C3_match)?;
+    assert_eq(t11_match,t12_match)?;
+    assert_eq(t11_match,t13_match)?;
+    assert_eq(t21_match,t22_match)?;
+    assert_eq(t21_match,t23_match)?;
+    assert_eq(C1_match,C_args)?;
+    assert_eq(t11_match,t1_args)?;
+    assert_eq(t12_match,t2_args)?;
+
+    //check target
+    let top = rtarget;
+    check_if_true(top.clone())?;
+
+    Ok(())
+}
+
 
 
 
@@ -1767,6 +1809,8 @@ pub fn get_rule(rule_name: &str) ->Rule {
       "eq-symm" => eq_symm,
       "distinct-binary-elim" => distinct_binary_elim,
 
+      //alethe only
+      "ite_eq" => ite_eq,
       x => {print!("{}",x); rare_error},
     }
 }
