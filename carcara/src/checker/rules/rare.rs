@@ -582,7 +582,7 @@ pub fn bool_or_taut2(RuleArgs { conclusion, args, .. }: RuleArgs) -> RuleResult 
     let mut pool = PrimitivePool::new(); //TODO: this is definitely not the right way
     
     //check arguments
-    assert_num_args(args, 3)?;
+    assert_num_args(args, 5)?;
     let xs_args = &args[1];
     let xs_contents = match_term_err!((RareList ...) = xs_args)?;
     let w_args = &args[2];
@@ -807,7 +807,7 @@ pub fn bool_implies_or_distrib(RuleArgs { conclusion, args, .. }: RuleArgs) -> R
     let (rmatch, rtarget) = match_term_err!((= f s) = &conclusion[0])?;
 
     //check arguments
-    assert_num_args(args, 3)?;
+    assert_num_args(args, 5)?;
     let y1_args = &args[1];
     let y2_args = &args[2];
     let ys_args = &args[3];
